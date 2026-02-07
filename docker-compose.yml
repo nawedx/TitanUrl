@@ -1,0 +1,35 @@
+services:
+  # 1. The Database (PostgreSQL)
+  postgres:
+    image: postgres:15-alpine
+    container_name: titan_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: titan_url
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. The Cache & Stream Engine (Redis)
+  redis:
+    image: redis:alpine
+    container_name: titan_redis
+    ports:
+      - "6379:6379"
+    # Enable AOF (Append Only File) for durability if it crashes
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

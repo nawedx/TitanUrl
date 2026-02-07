@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{888621E8
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TitanUrl.Core.Tests", "tests\TitanUrl.Core.Tests\TitanUrl.Core.Tests.csproj", "{7E005ADF-0C11-4546-B491-79EBD257AF47}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TitanUrl.Api", "src\TitanUrl.Api\TitanUrl.Api.csproj", "{D3EC2731-2F90-4C48-8F14-5E52FC8C1DC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{7E005ADF-0C11-4546-B491-79EBD257AF47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E005ADF-0C11-4546-B491-79EBD257AF47}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E005ADF-0C11-4546-B491-79EBD257AF47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3EC2731-2F90-4C48-8F14-5E52FC8C1DC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3EC2731-2F90-4C48-8F14-5E52FC8C1DC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3EC2731-2F90-4C48-8F14-5E52FC8C1DC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3EC2731-2F90-4C48-8F14-5E52FC8C1DC5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{17C48409-145D-40E9-B583-49750B1A1625} = {DC10A243-3061-4FD9-9009-92CFB8D7F6E7}
 		{7E005ADF-0C11-4546-B491-79EBD257AF47} = {888621E8-3CD0-469E-BA49-2C0748F17D84}
+		{D3EC2731-2F90-4C48-8F14-5E52FC8C1DC5} = {DC10A243-3061-4FD9-9009-92CFB8D7F6E7}
 	EndGlobalSection
 EndGlobal
