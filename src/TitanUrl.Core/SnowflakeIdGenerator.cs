@@ -18,8 +18,8 @@ public class SnowflakeIdGenerator
     private readonly int _machineId;
     private readonly long _epoch;
     private long _lastTimestamp = -1L;
-    private int _sequence = 0;
-    private readonly object _lock = new object();
+    private int _sequence;
+    private readonly object _lock = new();
 
     /// <summary>
     /// Initializes the generator.
@@ -28,7 +28,7 @@ public class SnowflakeIdGenerator
     /// <param name="customEpoch">The start date of your system (e.g., today).</param>
     public SnowflakeIdGenerator(int machineId, DateTimeOffset customEpoch)
     {
-        if (machineId < 0 || machineId > MaxMachineId)
+        if (machineId is < 0 or > MaxMachineId)
         {
             throw new ArgumentException($"Machine ID must be between 0 and {MaxMachineId}");
         }
@@ -70,7 +70,7 @@ public class SnowflakeIdGenerator
             // Construct the 64-bit ID
             return ((timestamp - _epoch) << TimestampShift) |
                    ((long)_machineId << MachineIdShift) |
-                   (long)_sequence;
+                   (uint)_sequence;
         }
     }
 
