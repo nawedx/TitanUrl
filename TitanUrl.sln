@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DC10A243-3061-4FD9-9009-92CFB8D7F6E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TitanUrl.Core", "src\TitanUrl.Core\TitanUrl.Core.csproj", "{17C48409-145D-40E9-B583-49750B1A1625}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{888621E8-3CD0-469E-BA49-2C0748F17D84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TitanUrl.Core.Tests", "tests\TitanUrl.Core.Tests\TitanUrl.Core.Tests.csproj", "{7E005ADF-0C11-4546-B491-79EBD257AF47}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{17C48409-145D-40E9-B583-49750B1A1625}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17C48409-145D-40E9-B583-49750B1A1625}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17C48409-145D-40E9-B583-49750B1A1625}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17C48409-145D-40E9-B583-49750B1A1625}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E005ADF-0C11-4546-B491-79EBD257AF47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E005ADF-0C11-4546-B491-79EBD257AF47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E005ADF-0C11-4546-B491-79EBD257AF47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E005ADF-0C11-4546-B491-79EBD257AF47}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{17C48409-145D-40E9-B583-49750B1A1625} = {DC10A243-3061-4FD9-9009-92CFB8D7F6E7}
+		{7E005ADF-0C11-4546-B491-79EBD257AF47} = {888621E8-3CD0-469E-BA49-2C0748F17D84}
+	EndGlobalSection
+EndGlobal
