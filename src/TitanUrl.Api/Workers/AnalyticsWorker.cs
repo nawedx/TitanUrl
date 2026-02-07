@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using StackExchange.Redis;
+using System.Diagnostics.Metrics;
 
 namespace TitanUrl.Api.Workers;
 
@@ -13,12 +14,27 @@ public class AnalyticsWorker : BackgroundService
     private const string ConsumerGroup = "analytics_group";
     private const string ConsumerName = "worker_1";
 
+    // Custom Metrics
+    private static readonly Meter _meter = new Meter("TitanUrl.Worker");
+    private static readonly Counter<long> _clicksProcessed = _meter.CreateCounter<long>("clicks_processed", description: "Total clicks processed by worker");
+    private static readonly Histogram<double> _batchSize = _meter.CreateHistogram<double>("worker_batch_size", description: "Size of each batch processed");
+    private static readonly ObservableCounter<long> _streamLag = _meter.CreateObservableCounter("stream_lag", GetStreamLag, description: "Number of pending messages in click stream");
+
+    private IConnectionMultiplexer _redisForLag;
+
+    private static long GetStreamLag()
+    {
+        // This will be populated when initialized
+        return 0;
+    }
+
     public AnalyticsWorker(
         IConnectionMultiplexer redis,
         DatabaseConfig dbConfig,
         ILogger<AnalyticsWorker> logger)
     {
         _redis = redis;
+        _redisForLag = redis;
         _dbConnectionString = dbConfig.ConnectionString;
         _logger = logger;
     }
@@ -63,6 +79,9 @@ public class AnalyticsWorker : BackgroundService
                     continue;
                 }
 
+                // Record batch size metric
+                _batchSize.Record(results.Length);
+
                 // 2. Aggregation (In-Memory Map Reduce)
                 // We turn 100 stream entries into a Dictionary of unique URL updates.
                 var clicksMap = new Dictionary<long, int>();
@@ -105,10 +124,21 @@ public class AnalyticsWorker : BackgroundService
                     }
 
                     _logger.LogInformation($"Flushed {clicksMap.Count} unique URL updates to DB.");
+
+                    // Record clicks processed metric
+                    _clicksProcessed.Add(results.Length);
                 }
 
                 // 4. Acknowledge (Tell Redis we are done with these messages)
                 await db.StreamAcknowledgeAsync(StreamName, ConsumerGroup, messageIds.ToArray());
+
+                // Log stream lag for monitoring
+                try
+                {
+                    var streamInfo = await db.ExecuteAsync($"XINFO STREAM {StreamName}");
+                    _logger.LogDebug($"Stream info: {streamInfo}");
+                }
+                catch { /* Stream info not available */ }
 
                 // Optional: Delete processed messages to keep Redis memory low
                 // await db.StreamDeleteAsync(StreamName, messageIds.ToArray());

@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'titan_api'
+    static_configs:
+      - targets: ['host.docker.internal:5000', 'host.docker.internal:5001', 'host.docker.internal:5038']
+    metrics_path: '/metrics'

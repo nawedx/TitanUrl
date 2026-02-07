@@ -4,6 +4,7 @@ using TitanUrl.Core;
 using Dapper;
 using Npgsql;
 using StackExchange.Redis;
+using System.Diagnostics;
 
 namespace TitanUrl.Api.Controllers;
 
@@ -14,23 +15,30 @@ public class UrlController : ControllerBase
     private readonly SnowflakeIdGenerator _idGenerator;
     private readonly string _dbConnectionString;
     private readonly IDatabase _redis;
+    private readonly ILogger<UrlController> _logger;
 
     public UrlController(
         SnowflakeIdGenerator idGenerator,
         DatabaseConfig dbConfig,
-        IConnectionMultiplexer redisMux)
+        IConnectionMultiplexer redisMux,
+        ILogger<UrlController> logger)
     {
         _idGenerator = idGenerator;
         _dbConnectionString = dbConfig.ConnectionString;
         _redis = redisMux.GetDatabase();
+        _logger = logger;
     }
 
     [HttpPost("shorten")]
     public async Task<IActionResult> Shorten([FromBody] ShortenUrlRequest request)
     {
+        var correlationId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+        var activity = Activity.Current;
+
         // 1. Validate URL (Basic check)
         if (!Uri.TryCreate(request.Url, UriKind.Absolute, out _))
         {
+            _logger.LogWarning("Invalid URL format: {Url} (CorrelationId: {CorrelationId})", request.Url, correlationId);
             return BadRequest("Invalid URL format.");
         }
 
@@ -40,6 +48,13 @@ public class UrlController : ControllerBase
 
         // 3. Convert to Short Code (Base62 Math - 0.0001ms)
         string shortCode = Base62Converter.Encode(id);
+
+        if (activity != null)
+        {
+            activity.SetTag("correlation_id", correlationId);
+            activity.SetTag("short_code", shortCode);
+            activity.SetTag("url_length", request.Url.Length);
+        }
 
         // 4. Save to Database (The only blocking I/O)
         // We save both the ID and the Code for fast lookups later.
@@ -71,6 +86,8 @@ public class UrlController : ControllerBase
             ShortCode: shortCode,
             ShortUrl: $"{Request.Scheme}://{Request.Host}/{shortCode}"
         );
+
+        _logger.LogInformation("URL shortened successfully - ShortCode: {ShortCode}, CorrelationId: {CorrelationId}", shortCode, correlationId);
 
         return Ok(response);
     }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using StackExchange.Redis;
 using TitanUrl.Core;
+using System.Diagnostics;
 
 namespace TitanUrl.Api.Controllers;
 
@@ -12,6 +13,8 @@ public class RedirectController : ControllerBase
 {
     private readonly string _dbConnectionString;
     private readonly IDatabase _redis;
+    private static long _cacheHits = 0;
+    private static long _cacheMisses = 0;
 
     public RedirectController(
         DatabaseConfig dbConfig,
@@ -26,6 +29,15 @@ public class RedirectController : ControllerBase
     {
         var db = _redis;
         string? originalUrl = null;
+        var correlationId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+
+        // Add correlation ID to span
+        var activity = Activity.Current;
+        if (activity != null)
+        {
+            activity.SetTag("correlation_id", correlationId);
+            activity.SetTag("short_code", shortCode);
+        }
 
         // 1. FAST PATH: Check Redis Cache (Memory)
         // Key: "url:k9J3z"
@@ -34,9 +46,13 @@ public class RedirectController : ControllerBase
         if (cachedUrl.HasValue)
         {
             originalUrl = cachedUrl.ToString();
+            Interlocked.Increment(ref _cacheHits);
+            if (activity != null) activity.SetTag("cache_hit", true);
         }
         else
         {
+            Interlocked.Increment(ref _cacheMisses);
+            if (activity != null) activity.SetTag("cache_hit", false);
             // 2. SLOW PATH: Check Database (Disk)
             // If it's not in cache, we decode the ID and look it up.
             try
@@ -75,13 +91,15 @@ public class RedirectController : ControllerBase
         // 4. ANALYTICS (Fire-and-Forget)
         // We write to a Redis Stream named "clicks".
         // This takes ~0.5ms. The user doesn't wait for the SQL UPDATE.
-        // Format: Key="id", Value=Base62ID (or SnowflakeID)
+        // Include correlation ID so we can trace the click end-to-end
         long urlId = Base62Converter.Decode(shortCode);
 
         await db.StreamAddAsync(
             key: "stream:clicks",
-            streamField: "urlId",
-            streamValue: urlId.ToString());
+            new NameValueEntry[] {
+                new("urlId", urlId.ToString()),
+                new("correlationId", correlationId)
+            });
 
         // 5. Redirect User
         return Redirect(originalUrl);

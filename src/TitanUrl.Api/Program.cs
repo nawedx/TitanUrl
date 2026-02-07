@@ -1,6 +1,9 @@
 using StackExchange.Redis;
 using Npgsql;
 using TitanUrl.Core;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +34,27 @@ var epoch = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
 var snowflake = new SnowflakeIdGenerator(machineId: 1, customEpoch: epoch);
 builder.Services.AddSingleton(snowflake);
 
+// ---------------------------------------------------------
+// 2B. REGISTER OBSERVABILITY (OpenTelemetry)
+// ---------------------------------------------------------
+
+var serviceName = "TitanUrl.Api";
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(serviceName))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRedisInstrumentation(redis)
+        .AddOtlpExporter(opts =>
+        {
+            opts.Endpoint = new Uri("http://localhost:4317");
+        }))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddMeter("TitanUrl.Worker")
+        .AddPrometheusExporter());
+
 // Add Controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -38,6 +62,35 @@ builder.Services.AddSwaggerGen();
 
 // Register the background worker
 builder.Services.AddHostedService<TitanUrl.Api.Workers.AnalyticsWorker>();
+
+// Health checks
+builder.Services.AddHealthChecks()
+    .AddCheck("redis", () =>
+    {
+        try
+        {
+            redis.GetServer(redis.GetEndPoints().First()).Ping();
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy();
+        }
+        catch
+        {
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Redis unavailable");
+        }
+    })
+    .AddCheck("postgres", () =>
+    {
+        try
+        {
+            using var conn = new NpgsqlConnection(dbConnectionString);
+            conn.Open();
+            conn.Close();
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy();
+        }
+        catch
+        {
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("PostgreSQL unavailable");
+        }
+    });
 
 var app = builder.Build();
 
@@ -81,6 +134,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
+app.MapPrometheusScrapingEndpoint();
 
 app.Run();
 

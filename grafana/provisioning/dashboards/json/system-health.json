@@ -1,0 +1,92 @@
+{
+  "dashboard": {
+    "title": "TitanUrl - System Health",
+    "tags": ["titanurl", "system"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "HTTP Requests/sec",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(http_server_request_duration_seconds_count[1m])",
+            "refId": "A",
+            "legendFormat": "{{method}} {{path}}"
+          }
+        ],
+        "yaxes": [{"label": "Requests/sec"}, {}]
+      },
+      {
+        "id": 2,
+        "title": "Request Duration (P95)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_server_request_duration_seconds_bucket[1m]))",
+            "refId": "A",
+            "legendFormat": "{{method}} {{path}}"
+          }
+        ],
+        "yaxes": [{"label": "Duration (s)"}, {}]
+      },
+      {
+        "id": 3,
+        "title": "HTTP Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(http_server_request_duration_seconds_count{status=~\"5..\"}[1m])",
+            "refId": "A",
+            "legendFormat": "{{status}} {{method}}"
+          }
+        ],
+        "yaxes": [{"label": "5xx Errors/sec"}, {}]
+      },
+      {
+        "id": 4,
+        "title": "Active Connections",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 4, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "http_server_request_duration_seconds_count",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Redis Connected Clients",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "redis_connected_clients",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [{"label": "Clients"}, {}]
+      },
+      {
+        "id": 6,
+        "title": "Redis Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "redis_memory_used_bytes / 1024 / 1024",
+            "refId": "A",
+            "legendFormat": "Memory (MB)"
+          }
+        ],
+        "yaxes": [{"label": "MB"}, {}]
+      }
+    ]
+  }
+}
